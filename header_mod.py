@@ -34,12 +34,17 @@ def get_filename() -> str:
 
 def get_blacklist():
     '''Get list of blacklisted lines'''
+
     blacklist = []
+
     with open("blacklist.txt", 'r') as bf:
         for line in bf.readlines():
+
             #Skip if empty line
             if line.strip() == '': continue
-            blacklist.append(line) 
+            
+            blacklist.append(line.strip()) 
+    return blacklist
 
 def time_format(time):
     '''Reads the given time as a normal 12 Hour readout'''
@@ -69,5 +74,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    print(get_blacklist())
 
