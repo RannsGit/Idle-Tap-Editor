@@ -17,3 +17,4 @@ The solution is misleadingly simple; just remove the conflicting lines. `blackli
 2. Call `starter.bat` with your target directory. For example: `starter.bat \\Users\\johndoe\\desktop`
  - Because this program targets every file in every sub-directory of the given directory, make sure to carefully select the root in which you would like to use. 
 
+
