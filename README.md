@@ -11,7 +11,7 @@ A common issue with post-processors in the CAM environment is corruption across 
 
 The solution is misleadingly simple; just remove the conflicting lines. `blacklist.txt` is where all the blacklisted lines (lines to be removed) are stored.
 
-##Usage
+## Usage
 
 1. Load `blacklist.txt` with all the gcode commands you would like to remove.
 2. Call `starter.bat` with your target directory. For example: `starter.bat \\Users\\johndoe\\desktop`
