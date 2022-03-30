@@ -2,8 +2,6 @@ import os
 import sys
 import subprocess
 
-
-
 PARSED_FILENAME = "parsed.list"
 WINDOWS = True if sys.platform == "win32" else False
 
