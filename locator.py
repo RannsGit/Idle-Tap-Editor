@@ -54,7 +54,8 @@ def getParsedFiles():
 
 def addFileToParsed(filename):
     '''Add filename to list of filenames that have been parsed'''
-    os.system(f"echo {filename} >> parsed.list")
+    with open(PARSED_FILENAME, 'a') as p:
+        p.write(f"{filename}\n")
 
 def dirHidden(p):
     '''Returns boolean indicating status of directory; hidden or not'''
