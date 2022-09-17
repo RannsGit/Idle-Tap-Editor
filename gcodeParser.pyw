@@ -15,14 +15,15 @@ from tkinter import filedialog
 from tkinter import messagebox
 import stat
 
-DEBUG = True
+DEBUG = False
 
 # Check if windows OS
-IS_WINDOWS = True if sys.platform == "win32" else False
+IS_WINDOWS = False
 
 #Import api if windows
-if IS_WINDOWS:
-        print("importing windows packages")
+if sys.platform == "win32":
+        if DEBUG: print("importing windows packages")
+        IS_WINDOWS = True
         import win32api, win32con
 
 
@@ -80,7 +81,6 @@ class Locator:
             listOfFile = os.listdir(path)
         except PermissionError:
             log(f"Insufficient permissions: {path}")
-            print(f"logger is: {log}")
             listOfFile = []
             
             
@@ -223,9 +223,6 @@ class ParserApp:
 
     def changeRoot(self, newRoot):
         """Change root directory for searching"""
-
-        print(f"change root to {newRoot}")
-
         del self.locator
         self.locator = Locator(root=newRoot)
 
@@ -514,8 +511,6 @@ class ParserGui(tk.Tk):
         wasBlocked = self.blockParse
         self.blockParse = True  # Stop two parse at once
 
-        print("setup, ready for parse")
-
         # Parse
         self.parserApp.parseAll(log=self.pfConsoleWrite, altLog=self.sfConsoleWrite)
 
@@ -562,8 +557,6 @@ class ParserGui(tk.Tk):
 
         self.blockParse = False # unblock after complete
 
-        print(f"path {self.parserApp._root}")
-
     def viewLogCallback(self):
         """Open log file in OS text editor"""
 
@@ -591,7 +584,7 @@ class ParserGui(tk.Tk):
         self.parserApp.fileLog(text)
 
         # print to terminal
-        print(f"PF CONSOLE: {text}")
+        if DEBUG: print(f"PF CONSOLE: {text}")
 
     def sfConsoleWrite(self, text):
         """Write to searched files console."""
@@ -609,7 +602,7 @@ class ParserGui(tk.Tk):
         )
 
         # print to terminal
-        print(f"SF CONSOLE: {text}")
+        if DEBUG: print(f"SF CONSOLE: {text}")
 
         # force update
         self.sfConsoleRefreshCount += 1
