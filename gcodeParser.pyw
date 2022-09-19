@@ -8,57 +8,57 @@ September 16, 2022
 import subprocess
 import os
 import sys
-from datetime import date, datetime
+from datetime import datetime
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
 import stat
+from typing import Callable
 
-DEBUG = True
+DEBUG = False
 
 # Check if windows OS
-IS_WINDOWS = True if sys.platform == "win32" else False
-
-#Import api if windows
-if IS_WINDOWS:
-        print("importing windows packages")
+IS_WINDOWS = False
+if sys.platform == "win32":
+        if DEBUG: print("importing windows packages")
         import win32api, win32con
+        IS_WINDOWS = True
 
 
 class Locator:
 
     PARSED_FILENAME = "parsed.list"
 
-    def __init__(self, root):
+    def __init__(self, root: str):
         """Check for OS type and for specified root directory"""
 
         self.root = root
 
     @classmethod
-    def getParsedFiles(cls):
+    def getParsedFiles(cls) -> list:
         """Get a list of filenames that have already been parsed"""
         with open(cls.PARSED_FILENAME, "r") as parsedFiles:
             return [i.split(": ")[-1] for i in parsedFiles.read().strip().split("\n")]
 
     @classmethod
-    def addFileToParsed(cls, filename):
+    def addFileToParsed(cls, filename: str) -> None:
         """Add filename to list of filenames that have been parsed"""
         with open(cls.PARSED_FILENAME, "a") as p:
             p.write(f"{datetime.now()}: {filename}\n")
 
     @staticmethod
-    def isTap(filename):
+    def isTap(filename: str) -> bool:
         """Checks if a filetype is tap"""
         return filename.split(".")[-1].lower() == "tap"
 
     @classmethod
-    def isDuplicate(cls, filename):
+    def isDuplicate(cls, filename: str) -> bool:
         """Checks if a file has already been parsed"""
         return filename in cls.getParsedFiles()
 
     @staticmethod
-    def dirHidden(filepath):
+    def dirHidden(filepath: str) -> bool:
         """Returns boolean indicating visibility status of a directory; hidden=True"""
 
         if IS_WINDOWS:
@@ -67,7 +67,8 @@ class Locator:
             return filepath.startswith(".")
 
 
-    def listFiles(self, path=None, log=print):
+    def listFiles(self, path:str =None, 
+                  log: Callable[[str], any]=print) -> list:
         """For the given path, get the List of all files in the directory tree."""
         assert self.root != None, "root cannot be None type"
         
@@ -80,7 +81,6 @@ class Locator:
             listOfFile = os.listdir(path)
         except PermissionError:
             log(f"Insufficient permissions: {path}")
-            print(f"logger is: {log}")
             listOfFile = []
             
             
@@ -106,22 +106,22 @@ class Gcode:
     def __init__(self, filename):
         self.filename = filename 
 
-    def read(self):
+    def read(self) -> str:
         """Returns the full text of gcode file"""
         with open(self.filename, "r") as gcodeFile:
             return gcodeFile.read()
     
-    def write(self, text):
+    def write(self, text: str) -> None:
         """Write to gcode file"""
         with open(self.filename, "w") as gcodeFile:
             gcodeFile.write(text)
 
     @property 
-    def text(self):
+    def text(self) -> str:
         return self.read()
 
     @text.setter
-    def text(self, text):
+    def text(self, text:str) -> None:
         self.write(text)
 
 class Parser:
@@ -130,17 +130,18 @@ class Parser:
     BLACKLIST_FILENAME = "blacklist.txt"
 
     def __init__(self):
+        
         self.blacklisted = self.getBlacklisted()
-
-        self.header = f"(Evaluated and edited at {self.timeFormat(datetime.now())})\n"
+        self.header = \
+            f"(Evaluated and edited at {self.timeFormat(datetime.now())})\n"
     
     @staticmethod
-    def timeFormat(time):
+    def timeFormat(time: datetime) -> str:
         """Reads the given time as a normal 12 Hour readout"""
         return time.strftime("%Y-%m-%d %I:%M %p")
 
     @classmethod
-    def getBlacklisted(cls):
+    def getBlacklisted(cls) -> list:
         blacklist = []
 
         with open(cls.BLACKLIST_FILENAME, "r") as bf:
@@ -153,7 +154,7 @@ class Parser:
         
         return blacklist
 
-    def parseFile(self, filename=None):
+    def parseFile(self, filename: str=None) -> None:
         """Parse and edit file for blacklisted text"""
 
         # Update file if give 
@@ -176,7 +177,8 @@ class Parser:
 
         self.gcode.write(fileContents)  # Write results to file
 
-    def setFile(self, filename):
+    def setFile(self, filename: str) -> None:
+        """Change or set the gcode file to a filename"""
         self.gcode = Gcode(filename=filename)
         self.filename = filename
 
@@ -185,7 +187,7 @@ class ParserApp:
 
     LOGFILE = "log.txt"
 
-    def __init__(self, root):
+    def __init__(self, root: str):
 
         # Move os to current dir
         os.chdir(os.path.dirname(os.path.realpath(__file__)))
@@ -194,7 +196,8 @@ class ParserApp:
         self.parser = Parser()
         self._root = root
     
-    def parseAll(self, log=print, altLog=lambda a: None):
+    def parseAll(self, log: Callable[[str], any]=print, 
+                 altLog: Callable[[str], any]=lambda a: None) -> None:
         """Parse all files and sub-files in the current root directory"""
         # Get All Files
         rootfiles = self.locator.listFiles(log=altLog)
@@ -216,25 +219,22 @@ class ParserApp:
                     # Mark as parsed
                     self.locator.addFileToParsed(file)
     
-    def clearLog(self):
+    def clearLog(self) -> None:
         """Clear previously parsed filenames"""
         with open(self.locator.PARSED_FILENAME, "w") as pf:
             pf.write("") # Clears Log
 
-    def changeRoot(self, newRoot):
+    def changeRoot(self, newRoot: str) -> None:
         """Change root directory for searching"""
-
-        print(f"change root to {newRoot}")
-
         del self.locator
         self.locator = Locator(root=newRoot)
 
-    def fileLog(self, text):
+    def fileLog(self, text: str) -> None:
         """Log console to file"""
         with open(self.LOGFILE, "a") as logfile:
             logfile.write(f"{datetime.now()}: {text}\n")
 
-    def filelogbegin(self):
+    def filelogbegin(self) -> None:
         """Add new header to logfile on each startup"""
         with open(self.LOGFILE, "a") as logfile:
             logfile.write(f"\n\t~~~~~  NEW LOGIN @ {datetime.now()} ~~~~~\n")
@@ -287,7 +287,7 @@ class ParserGui(tk.Tk):
         self.backgroundRefresh()
         self.after(1000, self.backgroundRefresh)
 
-    def setup(self):
+    def setup(self) -> None:
         """Build and place tk objects on window"""
 
         # ----- Window Config -----
@@ -503,7 +503,7 @@ class ParserGui(tk.Tk):
         pfConsole.columnconfigure(0, weight=1)
         sfConsole.columnconfigure(0, weight=1)
 
-    def parseNow(self):
+    def parseNow(self) -> None:
         """Parse files now"""
 
         # Mark indicator active
@@ -513,8 +513,6 @@ class ParserGui(tk.Tk):
         # Block Auto Parse
         wasBlocked = self.blockParse
         self.blockParse = True  # Stop two parse at once
-
-        print("setup, ready for parse")
 
         # Parse
         self.parserApp.parseAll(log=self.pfConsoleWrite, altLog=self.sfConsoleWrite)
@@ -528,7 +526,7 @@ class ParserGui(tk.Tk):
         # Update timer
         self.lastParse = datetime.now()
 
-    def editBlacklistCallback(self):
+    def editBlacklistCallback(self) -> None:
         """Open blacklist file in OS text editor"""
 
         blklstFile = self.parserApp.parser.BLACKLIST_FILENAME
@@ -539,12 +537,12 @@ class ParserGui(tk.Tk):
             subprocess.Popen(["open", blklstFile, "-e"])
 
 
-    def clearCachedFilesCallback(self):
+    def clearCachedFilesCallback(self) -> None:
         """Clear log of perviously parsed files."""
         self.pfConsoleWrite("~~Cleared File Cache~~")
         self.parserApp.clearLog()
 
-    def changeRootCallback(self):
+    def changeRootCallback(self) -> None:
         """Prompt user to change root for tap search"""
         
         self.blockParse = True  # block parse for operation
@@ -562,9 +560,7 @@ class ParserGui(tk.Tk):
 
         self.blockParse = False # unblock after complete
 
-        print(f"path {self.parserApp._root}")
-
-    def viewLogCallback(self):
+    def viewLogCallback(self) -> None:
         """Open log file in OS text editor"""
 
         if IS_WINDOWS:
@@ -572,7 +568,7 @@ class ParserGui(tk.Tk):
         else:
             subprocess.Popen(["open", self.parserApp.LOGFILE, "-e"])
 
-    def pfConsoleWrite(self, text):
+    def pfConsoleWrite(self, text: str) -> None:
         """Write to parsed files console"""
 
         # limit number of lines
@@ -591,9 +587,9 @@ class ParserGui(tk.Tk):
         self.parserApp.fileLog(text)
 
         # print to terminal
-        print(f"PF CONSOLE: {text}")
+        if DEBUG: print(f"PF CONSOLE: {text}")
 
-    def sfConsoleWrite(self, text):
+    def sfConsoleWrite(self, text: str) -> None:
         """Write to searched files console."""
 
         # limit number of lines
@@ -609,14 +605,14 @@ class ParserGui(tk.Tk):
         )
 
         # print to terminal
-        print(f"SF CONSOLE: {text}")
+        if DEBUG: print(f"SF CONSOLE: {text}")
 
         # force update
         self.sfConsoleRefreshCount += 1
         if self.sfConsoleRefreshCount % 15 == 0:
             self.update_idletasks()
 
-    def countdown(self):
+    def countdown(self) -> None:
         """Runs every background refresh. Counts down until next auto parse."""
 
         deltaSeconds = (datetime.now() - self.lastParse).seconds
@@ -629,7 +625,7 @@ class ParserGui(tk.Tk):
             f"{timeUntil} seconds until next parse"
         )
 
-    def backgroundRefresh(self):
+    def backgroundRefresh(self) -> None:
         """Runs each second. Acts as a home for updating functions"""
 
         if not self.blockParse:
