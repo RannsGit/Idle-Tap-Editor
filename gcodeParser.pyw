@@ -39,7 +39,8 @@ class Locator:
     def getParsedFiles(cls) -> list:
         """Get a list of filenames that have already been parsed"""
         with open(cls.PARSED_FILENAME, "r") as parsedFiles:
-            return [i.split(": ")[-1] for i in parsedFiles.read().strip().split("\n")]
+            return [i.split(": ")[-1] 
+                    for i in parsedFiles.read().strip().split("\n")]
 
     @classmethod
     def addFileToParsed(cls, filename: str) -> None:
@@ -58,18 +59,27 @@ class Locator:
         return filename in cls.getParsedFiles()
 
     @staticmethod
-    def dirHidden(filepath: str) -> bool:
-        """Returns boolean indicating visibility status of a directory; hidden=True"""
+    def isHidden(filepath: str) -> bool:
+        """Checks if a directory or file is hidden"""
 
         if IS_WINDOWS:
-            return bool(os.stat(filepath).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN)
+            return bool(os.stat(filepath).st_file_attributes\
+                        & stat.FILE_ATTRIBUTE_HIDDEN)
         else:
             return filepath.startswith(".")
 
 
     def listFiles(self, path:str =None, 
                   log: Callable[[str], any]=print) -> list:
-        """For the given path, get the List of all files in the directory tree."""
+        """List files in a directory and its subdirectories.
+        Arguments:
+            path (str): Starting directory filename to search. 
+                default = self.root
+            log (Callable[[str], any]): log to display permission errors
+                default = print
+        Returns:
+            (list): List containing full path filenames of every sub-file
+            """
         assert self.root != None, "root cannot be None type"
         
         # Default root path
@@ -82,19 +92,17 @@ class Locator:
         except PermissionError:
             log(f"Insufficient permissions: {path}")
             listOfFile = []
-            
-            
 
         allFiles = list()
         # Iterate over all the entries
         for entry in listOfFile:
             # Create full path
             fullPath = os.path.join(path, entry)
-            if self.dirHidden(fullPath):
+            if self.isHidden(fullPath):
                 continue
-            # If entry is a directory then get the list of files in this directory 
+            # Recurse for files (and subdirectories) in directories
             if os.path.isdir(fullPath) and fullPath != '':
-                allFiles = allFiles + self.listFiles(fullPath, log=log) # recurse
+                allFiles = allFiles + self.listFiles(fullPath, log=log) 
             else:
                 allFiles.append(fullPath)
                     
@@ -268,7 +276,8 @@ class ParserGui(tk.Tk):
         self.sfConsoleRefreshCount = 0
 
         # Misc Setup
-        self.currentRootTextVar = tk.StringVar(value="Current root: " + os.getcwd())
+        self.currentRootTextVar = tk.StringVar(value="Current root: " + \
+                                               os.getcwd())
 
         # Countdown Timer Setup
         self.lastParse = datetime.now()
@@ -515,7 +524,8 @@ class ParserGui(tk.Tk):
         self.blockParse = True  # Stop two parse at once
 
         # Parse
-        self.parserApp.parseAll(log=self.pfConsoleWrite, altLog=self.sfConsoleWrite)
+        self.parserApp.parseAll(log=self.pfConsoleWrite, 
+                                altLog=self.sfConsoleWrite)
 
         # Alive indicator status
         self.statusIndicator.config(text="Idle", foreground=prevForeground)
@@ -556,7 +566,8 @@ class ParserGui(tk.Tk):
         elif filename == "":
             pass
         else:
-            messagebox.showerror("G Code Editor Error", "Error: Cannot access specified root.")
+            messagebox.showerror("G Code Editor Error", 
+                                 "Error: Cannot access specified root.")
 
         self.blockParse = False # unblock after complete
 
